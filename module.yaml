@@ -9,9 +9,14 @@ notests *default:
     - Vostok.ClusterClient.Transport.Native/bin/Release/netstandard2.0/Vostok.ClusterClient.Transport.Native.dll
 
   deps:
+    - vostok.logging.console
+    - vostok.clusterclient.core@develop
+    - vostok.logging.abstractions
     - vostok.devtools
 
 full-build > notests:
+  deps:
+    - vostok.clusterclient.transport.tests
   build:
     target: Vostok.ClusterClient.Transport.Native.sln
     configuration: Release
