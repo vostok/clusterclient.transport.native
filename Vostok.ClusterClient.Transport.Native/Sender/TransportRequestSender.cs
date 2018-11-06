@@ -86,9 +86,9 @@ namespace Vostok.Clusterclient.Transport.Native.Sender
             {
                 return HandleCancellationError(request, cancellationToken);
             }
-            catch (Win32Exception error)
+            catch (HttpRequestException error) when (error.InnerException is Win32Exception win32Exception)
             {
-                return HandleWin32Error(request, error);
+                return HandleWin32Error(request, win32Exception);
             }
 
             if (sendContext.Response != null)

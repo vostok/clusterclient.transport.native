@@ -13,7 +13,5 @@ namespace Vostok.Clusterclient.Transport.Native.Client
             CancellationToken cancellationToken);
         
         void CancelPendingRequests();
-        
-        HttpMessageHandler Handler { get; }
     }
 }

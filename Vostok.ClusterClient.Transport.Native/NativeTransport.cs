@@ -147,25 +147,6 @@ namespace Vostok.Clusterclient.Transport.Native
             return new Response(ResponseCode.RequestTimeout);
         }
 
-        private Response HandleGenericError(Request request, Exception error)
-        {
-            error = error.InnerException ?? error;
-
-            if (error is Win32Exception win32Error)
-                return HandleWin32Error(request, win32Error);
-
-            LogUnknownException(request, error);
-
-            return new Response(ResponseCode.UnknownFailure);
-        }
-
-        private Response HandleWin32Error(Request request, Win32Exception error)
-        {
-            LogWin32Error(request, error);
-
-            return WinHttpErrorsHandler.Handle(error);
-        }
-
         #region Logging
 
         private void LogRequestTimeout(Request request, TimeSpan timeout)

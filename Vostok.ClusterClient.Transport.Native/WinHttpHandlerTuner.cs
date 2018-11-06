@@ -18,7 +18,7 @@ namespace Vostok.Clusterclient.Transport.Native
 
         public static void Tune(HttpClientHandler handler, TimeSpan? connectTimeout, ILog log)
         {
-            if (!canTune)
+            if (!canTune || !connectTimeout.HasValue)
                 return;
 
             try

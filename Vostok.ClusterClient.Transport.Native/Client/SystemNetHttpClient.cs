@@ -13,18 +13,14 @@ namespace Vostok.Clusterclient.Transport.Native.Client
 {
     internal class SystemNetHttpClient : HttpClient, IHttpClient
     {
-        public HttpMessageHandler Handler { get; }
-
         public SystemNetHttpClient(HttpMessageHandler handler)
             : base(handler)
         {
-            Handler = handler;
         }
 
         public SystemNetHttpClient(HttpMessageHandler handler, bool disposeHandler)
             : base(handler, disposeHandler)
         {
-            Handler = handler;
         }
     }
     
@@ -56,7 +52,7 @@ namespace Vostok.Clusterclient.Transport.Native.Client
 
         private IHttpClient CreateClient(TimeSpan? connectionTimeout)
         {
-            return new SystemNetHttpClient(HttpClientHandlerFactory.Build(settings, log), true);
+            return new SystemNetHttpClient(HttpClientHandlerFactory.Build(settings, connectionTimeout, log), true);
         }
 
         public void Dispose()
@@ -88,16 +84,20 @@ namespace Vostok.Clusterclient.Transport.Native.Client
             }
         }
 
-        public static HttpClientHandler Build(NativeTransportSettings settings, ILog log)
+        public static HttpClientHandler Build(NativeTransportSettings settings, TimeSpan? connectionTimeout, ILog log)
         {
             EnsureInitialized(log);
             var client = clientFactory();
             client.AllowAutoRedirect = settings.AllowAutoRedirect;
             client.AutomaticDecompression = DecompressionMethods.None;
             client.MaxResponseHeadersLength = int.MaxValue;
-            
+            client.Proxy = settings.Proxy;
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
                 client.ServerCertificateCustomValidationCallback = (message, certificate2, arg3, arg4) => true;
+                WinHttpHandlerTuner.Tune(client, connectionTimeout, log);
+            }
             
            
             return client;
