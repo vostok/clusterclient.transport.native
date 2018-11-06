@@ -6,6 +6,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Core.Transport;
+using Vostok.Clusterclient.Transport.Native.Client;
+using Vostok.Clusterclient.Transport.Native.Messages;
+using Vostok.Clusterclient.Transport.Native.Pool;
+using Vostok.Clusterclient.Transport.Native.ResponseReading;
+using Vostok.Clusterclient.Transport.Native.Sender;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Native
@@ -13,62 +18,89 @@ namespace Vostok.Clusterclient.Transport.Native
     /// <inheritdoc cref="ITransport"/>
     public class NativeTransport : ITransport, IDisposable
     {
+        private readonly NativeTransportSettings settings;
         private readonly ILog log;
-        private readonly HttpClientHandler handler;
-        private readonly HttpClient httpClient;
-        private TimeSpan? connectionTimeout;
+        private readonly IHttpClientProvider httpClientProvider;
+        private readonly ResponseReader reader;
+        private readonly TransportRequestSender sender;
+        private readonly HttpClientProvider clientProvider;
 
-        public NativeTransport(ILog log)
+        public NativeTransport(NativeTransportSettings settings, ILog log)
         {
+            this.settings = settings;
             this.log = log ?? throw new ArgumentNullException(nameof(log));
 
-            connectionTimeout = TimeSpan.FromSeconds(2);
+            httpClientProvider = new HttpClientProvider(settings, log);
+            reader = new ResponseReader(settings, new Pool<byte[]>(() => new byte[16384]), log);
+            this.log = log;
 
-            handler = CreateClientHandler();
+            this.sender = CreateSender(settings, log);
+            this.clientProvider = new HttpClientProvider(this.settings, log);
+        }
+        
+        private static TransportRequestSender CreateSender(NativeTransportSettings settings, ILog log)
+        {
+            var pool = new Pool<byte[]>(() => new byte[16384]);
 
-            TuneClientHandler();
+            var requestFactory = new HttpRequestMessageFactory(pool, log);
+            var responseReader = new ResponseReader(settings, pool, log);
 
-            httpClient = new HttpClient(handler)
-            {
-                Timeout = Timeout.InfiniteTimeSpan
-            };
+            return new TransportRequestSender(requestFactory, responseReader, log);
         }
 
         /// <inheritdoc />
         public async Task<Response> SendAsync(Request request, TimeSpan? connectionTimeout, TimeSpan timeout, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+                return Responses.Canceled;
+
             if (timeout.TotalMilliseconds < 1)
             {
                 LogRequestTimeout(request, timeout);
-                return new Response(ResponseCode.RequestTimeout);
+                return Responses.Timeout;
             }
 
-            try
+            using (var timeoutCancellation = new CancellationTokenSource())
+            using (var requestCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
-                var requestMessage = SystemNetHttpRequestConverter.Convert(request);
-
-                using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+                var client = clientProvider.GetClient(connectionTimeout);
+                var timeoutTask = Task.Delay(timeout, timeoutCancellation.Token);
+                var senderTask = sender.SendAsync(client, request, requestCancellation.Token);
+                var completedTask = await Task.WhenAny(timeoutTask, senderTask).ConfigureAwait(false);
+                if (completedTask is Task<Response> taskWithResponse)
                 {
-                    cts.CancelAfter(timeout);
-
-                    var responseMessage = await httpClient.SendAsync(requestMessage, cts.Token).ConfigureAwait(false);
-
-                    var response = await SystemNetHttpResponseConverter.ConvertAsync(responseMessage).ConfigureAwait(false);
-
-                    return response;
+                    timeoutCancellation.Cancel();
+                    return taskWithResponse.GetAwaiter().GetResult();
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                return HandleCancellationError(request, timeout, cancellationToken);
-            }
-            catch (Exception error)
-            {
-                return HandleGenericError(request, error);
-            }
 
+                // completedTask is timeout Task
+                requestCancellation.Cancel();
+                LogRequestTimeout(request, timeout);
+
+                // wait for cancellation & dispose resources associated with Response object
+                // ReSharper disable once MethodSupportsCancellation
+                var senderTaskContinuation = senderTask.ContinueWith(
+                    t =>
+                    {
+                        if (t.IsCompleted)
+                            t.GetAwaiter().GetResult().Dispose();
+                    });
+
+                using (var abortCancellation = new CancellationTokenSource())
+                {
+                    var abortWaitingDelay = Task.Delay(settings.RequestAbortTimeout, abortCancellation.Token);
+
+                    await Task.WhenAny(senderTaskContinuation, abortWaitingDelay).ConfigureAwait(false);
+
+                    abortCancellation.Cancel();
+                }
+
+                // if (!senderTask.IsCompleted)
+                //     LogFailedToWaitForRequestAbort();
+
+                return Responses.Timeout;
+            }
         }
-
 
         /// <inheritdoc />
         public TransportCapabilities Capabilities { get; }
@@ -76,11 +108,10 @@ namespace Vostok.Clusterclient.Transport.Native
         /// <inheritdoc />
         public void Dispose()
         {
-            handler?.Dispose();
-            httpClient?.Dispose();
+            httpClientProvider?.Dispose();
         }
 
-        private static HttpClientHandler CreateClientHandler()
+        private HttpClientHandler CreateClientHandler()
         {
             var handler = new HttpClientHandler
             {
@@ -88,7 +119,7 @@ namespace Vostok.Clusterclient.Transport.Native
                 AutomaticDecompression = DecompressionMethods.None,
                 //CheckCertificateRevocationList = false,
                 MaxConnectionsPerServer = 10000,
-                Proxy = null,
+                Proxy = settings.Proxy,
                 PreAuthenticate = false,
                 UseDefaultCredentials = false,
                 UseCookies = false,
@@ -106,12 +137,6 @@ namespace Vostok.Clusterclient.Transport.Native
 
             return handler;
         }
-
-        private void TuneClientHandler()
-        {
-            WinHttpHandlerTuner.Tune(handler, connectionTimeout, log);
-        }
-
         private Response HandleCancellationError(Request request, TimeSpan timeout, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)

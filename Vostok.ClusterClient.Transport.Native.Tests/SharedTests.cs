@@ -1,3 +1,5 @@
+using NSubstitute.Core;
+using NUnit.Framework;
 using Vostok.Clusterclient.Transport.Tests.Shared.Functional;
 using Vostok.Logging.Abstractions;
 using Vostok.Logging.Console;
@@ -11,9 +13,18 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
 
         public ITransport CreateTransport(TestTransportSettings settings, ILog log)
         {
-            return new NativeTransport(log);
+            var transportSettings = new NativeTransportSettings
+            {
+                Proxy = settings.Proxy,
+                BufferFactory = settings.BufferFactory,
+                MaxResponseBodySize = settings.MaxResponseBodySize,
+                UseResponseStreaming = settings.UseResponseStreaming,
+                AllowAutoRedirect = settings.AllowAutoRedirect
+            };
+            
+            return new NativeTransport(transportSettings, log);
         }
-
+        
         public TestTransportSettings CreateDefaultSettings() => new TestTransportSettings
         {
             MaxConnectionsPerEndpoint = 10 * 1000,
@@ -22,6 +33,7 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
         };
     }
     
+    [TestFixture]
     internal class AllowAutoRedirectTests : AllowAutoRedirectTests<Config>
     {
     }

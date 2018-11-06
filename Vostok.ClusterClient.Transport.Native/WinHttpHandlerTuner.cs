@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Native
-{
+{   
     internal static class WinHttpHandlerTuner
     {
         private const BindingFlags privateBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -85,5 +85,4 @@ namespace Vostok.Clusterclient.Transport.Native
             int sendTimeout,
             int receiveTimeout);
     }
-
 }

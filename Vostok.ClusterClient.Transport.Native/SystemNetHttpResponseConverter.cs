@@ -1,12 +1,13 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
+using Vostok.Clusterclient.Transport.Native.ResponseReading;
 
 namespace Vostok.Clusterclient.Transport.Native
 {
     internal static class SystemNetHttpResponseConverter
     {
-        public static async Task<Response> ConvertAsync(HttpResponseMessage message)
+        public static async Task<Response> ConvertAsync(HttpResponseMessage message, ResponseReadResult result)
         {
             var convertedCode = (ResponseCode)message.StatusCode;
             var headers = Headers.Empty;
