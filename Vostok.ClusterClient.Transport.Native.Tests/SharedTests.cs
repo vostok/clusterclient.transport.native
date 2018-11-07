@@ -76,4 +76,7 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
     internal class StatusCodeReceivingTests : StatusCodeReceivingTests<Config>
     {
     }
+    internal class ContentStreamingTests : ContentStreamingTests<Config>
+    {
+    }
 }
