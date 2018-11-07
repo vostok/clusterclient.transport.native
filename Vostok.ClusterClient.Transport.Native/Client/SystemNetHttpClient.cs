@@ -108,7 +108,7 @@ namespace Vostok.Clusterclient.Transport.Native.Client
             try
             {
                 var handlerType = typeof(HttpClientHandler);
-                var ctor = handlerType.GetConstructor(BindingFlags.NonPublic, null, new [] {typeof(bool)}, null);
+                var ctor = handlerType.GetConstructor(BindingFlags.NonPublic|BindingFlags.Instance, null, new [] {typeof(bool)}, null);
                 if (ctor == null)
                     return () => new HttpClientHandler();
                 return Expression.Lambda<Func<HttpClientHandler>>(Expression.New(ctor, Expression.Constant(false))).Compile();
