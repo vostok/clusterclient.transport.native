@@ -144,7 +144,7 @@ namespace Vostok.Clusterclient.Transport.Native.Sender
 
         private void LogCurlError(Request request, Exception error, CurlCode code)
         {
-            log.Error(error, "WinAPI error with code {ErrorCode} while sending request to {Target}.", code, request.Url.Authority);
+            log.Error(error, "CURL error with code {ErrorCode} while sending request to {Target}.", code, request.Url.Authority);
         }
     }
 }
