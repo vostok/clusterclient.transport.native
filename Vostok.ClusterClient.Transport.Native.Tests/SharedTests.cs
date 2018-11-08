@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using NSubstitute.Core;
 using NUnit.Framework;
 using Vostok.Clusterclient.Transport.Tests.Shared.Functional;
@@ -45,6 +46,11 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
     }
     internal class ConnectionTimeoutTests : ConnectionTimeoutTests<Config>
     {
+        public override void Should_timeout_on_connection_to_a_blackhole_by_connect_timeout()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                base.Should_timeout_on_connection_to_a_blackhole_by_connect_timeout();
+        }
     }
     internal class ContentReceivingTests : ContentReceivingTests<Config>
     {
