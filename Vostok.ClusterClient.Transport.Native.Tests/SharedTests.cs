@@ -55,9 +55,12 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
     internal class HeaderReceivingTests : HeaderReceivingTests<Config>
     {
     }
-    internal class HeaderSendingTests : HeaderSendingTests<Config>
-    {
-    }
+    
+    // disable
+    // internal class HeaderSendingTests : HeaderSendingTests<Config>
+    // {
+    // }
+    
     internal class MaxConnectionsPerEndpointTests : MaxConnectionsPerEndpointTests<Config>
     {
     }
