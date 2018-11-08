@@ -1,4 +1,5 @@
 using JetBrains.Annotations;
+// ReSharper disable InconsistentNaming
 
 namespace Vostok.Clusterclient.Transport.Native.Hacks
 {

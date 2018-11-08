@@ -68,7 +68,7 @@ namespace Vostok.Clusterclient.Transport.Native.Messages
             var streamContent = request.StreamContent;
 
             if (content != null && content.Length > 0)
-                return new RequestByteArrayContent(request, sendContext, pool, log, cancellationToken);
+                return new RequestByteArrayContent(request, sendContext, log, cancellationToken);
             if (streamContent != null)
                 return new RequestStreamContent(request, sendContext, pool, log, cancellationToken);
 

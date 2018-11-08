@@ -143,6 +143,7 @@ namespace Vostok.Clusterclient.Transport.Native.ResponseReading
             }
         }
 
-        private Task<Stream> GetResponseWithStreamAsync(HttpResponseMessage responseMessage) => responseMessage.Content.ReadAsStreamAsync();
+        private static Task<Stream> GetResponseWithStreamAsync(HttpResponseMessage responseMessage)
+            => responseMessage.Content.ReadAsStreamAsync();
     }
 }

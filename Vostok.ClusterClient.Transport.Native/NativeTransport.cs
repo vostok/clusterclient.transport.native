@@ -11,11 +11,15 @@ using Vostok.Clusterclient.Transport.Native.Messages;
 using Vostok.Clusterclient.Transport.Native.Pool;
 using Vostok.Clusterclient.Transport.Native.ResponseReading;
 using Vostok.Clusterclient.Transport.Native.Sender;
+using Vostok.Commons.Time;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Native
 {
-    /// <inheritdoc cref="ITransport"/>
+    /// <summary>
+    /// <para>A legacy ClusterClient transport for .NET Core 2.0. Internally uses <c>WinHttpHandler</c> on Windows and <c>CurlHandler</c> on Unix-like OS.</para>
+    /// </summary>
+    [Obsolete("Don't use this ITransport implementation on .NET Core 2.1 or later. Use SocketsTransport instead.")]
     public class NativeTransport : ITransport, IDisposable
     {
         private readonly NativeTransportSettings settings;
@@ -25,6 +29,7 @@ namespace Vostok.Clusterclient.Transport.Native
         private readonly TransportRequestSender sender;
         private readonly HttpClientProvider clientProvider;
 
+        /// <inheritdoc cref="NativeTransport" />
         public NativeTransport(NativeTransportSettings settings, ILog log)
         {
             this.settings = settings;
@@ -34,8 +39,8 @@ namespace Vostok.Clusterclient.Transport.Native
             reader = new ResponseReader(settings, new Pool<byte[]>(() => new byte[16384]), log);
             this.log = log;
 
-            this.sender = CreateSender(settings, log);
-            this.clientProvider = new HttpClientProvider(this.settings, log);
+            sender = CreateSender(settings, log);
+            clientProvider = new HttpClientProvider(this.settings, log);
         }
         
         private static TransportRequestSender CreateSender(NativeTransportSettings settings, ILog log)
@@ -95,8 +100,8 @@ namespace Vostok.Clusterclient.Transport.Native
                     abortCancellation.Cancel();
                 }
 
-                // if (!senderTask.IsCompleted)
-                //     LogFailedToWaitForRequestAbort();
+                if (!senderTask.IsCompleted)
+                    LogFailedToWaitForRequestAbort();
 
                 return Responses.Timeout;
             }
@@ -137,6 +142,7 @@ namespace Vostok.Clusterclient.Transport.Native
 
             return handler;
         }
+        
         private Response HandleCancellationError(Request request, TimeSpan timeout, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -151,17 +157,24 @@ namespace Vostok.Clusterclient.Transport.Native
 
         private void LogRequestTimeout(Request request, TimeSpan timeout)
         {
-            log.Error($"Request timed out. Target = {request.Url.Authority}. Timeout = {timeout.TotalSeconds:0.000} sec.");
+            log.Error("Request timed out. Target = {Target}. Timeout = {Timeout:0.000} sec.", request.Url.Authority, timeout.TotalSeconds);
         }
 
         private void LogUnknownException(Request request, Exception error)
         {
-            log.Error($"Unknown error in sending request to {request.Url.Authority}. ", error);
+            log.Error(error, "Unknown error in sending request to {Target}. ", request.Url.Authority);
         }
 
         private void LogWin32Error(Request request, Win32Exception error)
         {
-            log.Error($"WinAPI error with code {error.NativeErrorCode} while sending request to {request.Url.Authority}.", error);
+            log.Error(error, "WinAPI error with code {ErrorCode} while sending request to {Target}.", error.NativeErrorCode, request.Url.Authority);
+        }
+
+        private void LogFailedToWaitForRequestAbort()
+        {
+            log.Warn(
+                "Timed out request was aborted but did not complete in {RequestAbortTimeout}.",
+                settings.RequestAbortTimeout.ToPrettyString());
         }
 
         #endregion

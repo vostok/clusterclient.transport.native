@@ -17,7 +17,7 @@ namespace Vostok.Clusterclient.Transport.Native
         private const int ERROR_WINHTTP_TIMEOUT = 12002;
         // ReSharper restore InconsistentNaming
 
-        private static readonly Dictionary<int, ResponseCode> mapping = new Dictionary<int, ResponseCode>
+        private static readonly Dictionary<int, ResponseCode> Mapping = new Dictionary<int, ResponseCode>
         {
             { ERROR_WINHTTP_AUTODETECTION_FAILED, ResponseCode.ConnectFailure },
             { ERROR_WINHTTP_CANNOT_CONNECT, ResponseCode.ConnectFailure },
@@ -31,7 +31,7 @@ namespace Vostok.Clusterclient.Transport.Native
 
         public static Response Handle(Win32Exception error)
         {
-            return mapping.TryGetValue(error.NativeErrorCode, out var code) 
+            return Mapping.TryGetValue(error.NativeErrorCode, out var code) 
                 ? new Response(code) 
                 : new Response(ResponseCode.UnknownFailure); 
         }

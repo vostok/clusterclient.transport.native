@@ -49,6 +49,8 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
     {
         public override void Should_timeout_on_connection_to_a_blackhole_by_connect_timeout()
         {
+            while (!Debugger.IsAttached) ;
+            
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 base.Should_timeout_on_connection_to_a_blackhole_by_connect_timeout();
         }
