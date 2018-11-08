@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using NSubstitute.Core;
 using NUnit.Framework;
@@ -62,10 +63,16 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
     {
     }
     
-    // disable
-    // internal class HeaderSendingTests : HeaderSendingTests<Config>
-    // {
-    // }
+    internal class HeaderSendingTests : HeaderSendingTests<Config>
+    {
+        public override void SetUp()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                Assert.Pass("Test ignored on Windows");
+            
+            base.SetUp();
+        }
+    }
     
     internal class MaxConnectionsPerEndpointTests : MaxConnectionsPerEndpointTests<Config>
     {
