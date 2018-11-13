@@ -10,7 +10,7 @@ notests *default:
 
   deps:
     - vostok.logging.console
-    - vostok.clusterclient.core@develop
+    - vostok.clusterclient.core
     - vostok.logging.abstractions
     - vostok.devtools
 
