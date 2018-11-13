@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.InteropServices;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Transport.Native.Hacks;
 using Vostok.Logging.Abstractions;
@@ -14,7 +15,7 @@ namespace Vostok.Clusterclient.Transport.Native
             try
             {
                 if (request.Headers != null)
-                    AssignHeadersThroughProperties(request.Headers, message);
+                    FillInternal(request, message, log);
             }
             catch (Exception e)
             {
@@ -38,6 +39,16 @@ namespace Vostok.Clusterclient.Transport.Native
             }
 
             return headers;
+        }
+
+        private static void FillInternal(Request request, HttpRequestMessage message, ILog log)
+        {
+            var isUnixLike = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+            if (isUnixLike && HttpHeadersUnlocker.TryUnlockRestrictedHeaders(message.Headers, log))
+                AssignHeadersDirectly(request.Headers, message.Headers);
+            else
+                AssignHeadersThroughProperties(request.Headers, message);
         }
 
         private static void AssignHeadersDirectly(Headers source, HttpHeaders target)

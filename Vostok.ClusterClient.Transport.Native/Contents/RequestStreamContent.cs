@@ -76,7 +76,7 @@ namespace Vostok.Clusterclient.Transport.Native.Contents
 
         // Used on Unix-like OS
         protected override Task<Stream> CreateContentReadStreamAsync()
-            => Task.FromResult((Stream) new RequestStreamWrapper(streamContent.Stream, streamContent.Length, SendContext, Log));
+            => Task.FromResult<Stream>(new RequestStreamWrapper(streamContent.Stream, streamContent.Length, SendContext, Log));
 
         protected override bool TryComputeLength(out long length)
         {

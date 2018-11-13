@@ -8,17 +8,17 @@ using System.Runtime.InteropServices;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Native
-{   
+{
     internal static class WinHttpHandlerTuner
     {
-        private const BindingFlags privateBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic;
+        private const BindingFlags PrivateBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic;
 
         private static volatile Func<HttpClientHandler, SafeHandle> handleExtractor;
         private static volatile bool canTune = true;
 
         public static void Tune(HttpClientHandler handler, TimeSpan? connectTimeout, ILog log)
         {
-            if (!canTune || !connectTimeout.HasValue)
+            if (!canTune)
                 return;
 
             try
@@ -30,13 +30,13 @@ namespace Vostok.Clusterclient.Transport.Native
                 if (handle == null)
                     return;
 
-                if (!WinHttpSetTimeouts(handle, 0, (int) (connectTimeout?.TotalMilliseconds ?? 0d), 0, 0))
+                if (!WinHttpSetTimeouts(handle, 0, (int) (connectTimeout?.TotalMilliseconds ?? 0), 0, 0))
                     throw new Win32Exception();
             }
             catch (Exception error)
             {
                 canTune = false;
-                log.Error("Failed to tune WinHttpHandler.", error);
+                log.Error(error, "Failed to tune WinHttpHandler.");
             }
         }
 
@@ -44,11 +44,11 @@ namespace Vostok.Clusterclient.Transport.Native
         {
             try
             {
-                var winHttpHandlerField = typeof (HttpClientHandler).GetField("_winHttpHandler", privateBindingFlags);
+                var winHttpHandlerField = typeof(HttpClientHandler).GetField("_winHttpHandler", PrivateBindingFlags);
                 if (winHttpHandlerField == null)
                     return _ => null;
 
-                var ensureSessionMethod = winHttpHandlerField.FieldType.GetMethod("EnsureSessionHandleExists", privateBindingFlags);
+                var ensureSessionMethod = winHttpHandlerField.FieldType.GetMethod("EnsureSessionHandleExists", PrivateBindingFlags);
                 if (ensureSessionMethod == null)
                     return _ => null;
 
@@ -56,11 +56,11 @@ namespace Vostok.Clusterclient.Transport.Native
                 if (requestStateType == null)
                     return _ => null;
 
-                var sessionHandleField = winHttpHandlerField.FieldType.GetField("_sessionHandle", privateBindingFlags);
+                var sessionHandleField = winHttpHandlerField.FieldType.GetField("_sessionHandle", PrivateBindingFlags);
                 if (sessionHandleField == null)
                     return _ => null;
 
-                var httpClientHandler = Expression.Parameter(typeof (HttpClientHandler));
+                var httpClientHandler = Expression.Parameter(typeof(HttpClientHandler));
                 var winHttpHandler = Expression.Field(httpClientHandler, winHttpHandlerField);
                 var sessionHandle = Expression.Field(winHttpHandler, sessionHandleField);
                 var requestState = Expression.New(requestStateType.GetConstructors().First());
@@ -71,7 +71,7 @@ namespace Vostok.Clusterclient.Transport.Native
             }
             catch (Exception error)
             {
-                log.Error("Failed to build WinHttpHandler tuning delegate.", error);
+                log.Error(error, "Failed to build WinHttpHandler tuning delegate.");
                 return _ => null;
             }
         }

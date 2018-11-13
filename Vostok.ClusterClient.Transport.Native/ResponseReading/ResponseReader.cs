@@ -53,6 +53,9 @@ namespace Vostok.Clusterclient.Transport.Native.ResponseReading
             }
         }
 
+        private static Task<Stream> GetResponseWithStreamAsync(HttpResponseMessage responseMessage)
+            => responseMessage.Content.ReadAsStreamAsync();
+
         private async Task<ResponseReadResult> GetResponseWithUnknownContentLength(HttpResponseMessage message, CancellationToken cancellationToken)
         {
             using (var stream = await message.Content.ReadAsStreamAsync().ConfigureAwait(false))
@@ -142,7 +145,5 @@ namespace Vostok.Clusterclient.Transport.Native.ResponseReading
                 return false;
             }
         }
-
-        private Task<Stream> GetResponseWithStreamAsync(HttpResponseMessage responseMessage) => responseMessage.Content.ReadAsStreamAsync();
     }
 }
