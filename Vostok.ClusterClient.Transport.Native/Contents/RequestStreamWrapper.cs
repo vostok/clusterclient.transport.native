@@ -13,8 +13,8 @@ namespace Vostok.Clusterclient.Transport.Native.Contents
         private readonly long? length;
         private readonly SendContext context;
         private readonly ILog log;
-        private long position;
         private readonly long bytesToSent;
+        private long position;
 
         public RequestStreamWrapper(Stream stream, long? length, SendContext context, ILog log)
         {
@@ -25,6 +25,12 @@ namespace Vostok.Clusterclient.Transport.Native.Contents
             bytesToSent = length ?? long.MaxValue;
         }
 
+        public override bool CanRead { get; } = true;
+        public override bool CanSeek { get; } = false;
+        public override bool CanWrite { get; } = false;
+        public override long Length => length ?? throw new NotSupportedException();
+        public override long Position { get; set; }
+
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             Console.WriteLine("RequestStreamWrapper");
@@ -32,7 +38,7 @@ namespace Vostok.Clusterclient.Transport.Native.Contents
             {
                 count = (int) Math.Min(count, bytesToSent - position);
                 var bytesRead = await stream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
-                
+
                 position += bytesRead;
                 return bytesRead;
             }
@@ -61,12 +67,6 @@ namespace Vostok.Clusterclient.Transport.Native.Contents
         public override void SetLength(long value) => throw new NotImplementedException();
 
         public override void Write(byte[] buffer, int offset, int count) => throw new NotImplementedException();
-
-        public override bool CanRead { get; } = true;
-        public override bool CanSeek { get; } = false;
-        public override bool CanWrite { get; } = false;
-        public override long Length => length ?? throw new NotSupportedException();
-        public override long Position { get; set; }
 
         private void LogUserStreamFailure(Exception error)
             => log.Warn(error, "Failure in reading input stream while sending request body.");

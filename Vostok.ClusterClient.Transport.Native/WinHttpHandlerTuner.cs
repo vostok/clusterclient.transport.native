@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Native
-{   
+{
     internal static class WinHttpHandlerTuner
     {
         private const BindingFlags PrivateBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -44,7 +44,7 @@ namespace Vostok.Clusterclient.Transport.Native
         {
             try
             {
-                var winHttpHandlerField = typeof (HttpClientHandler).GetField("_winHttpHandler", PrivateBindingFlags);
+                var winHttpHandlerField = typeof(HttpClientHandler).GetField("_winHttpHandler", PrivateBindingFlags);
                 if (winHttpHandlerField == null)
                     return _ => null;
 
@@ -60,7 +60,7 @@ namespace Vostok.Clusterclient.Transport.Native
                 if (sessionHandleField == null)
                     return _ => null;
 
-                var httpClientHandler = Expression.Parameter(typeof (HttpClientHandler));
+                var httpClientHandler = Expression.Parameter(typeof(HttpClientHandler));
                 var winHttpHandler = Expression.Field(httpClientHandler, winHttpHandlerField);
                 var sessionHandle = Expression.Field(winHttpHandler, sessionHandleField);
                 var requestState = Expression.New(requestStateType.GetConstructors().First());

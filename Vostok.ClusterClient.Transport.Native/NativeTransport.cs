@@ -22,6 +22,7 @@ namespace Vostok.Clusterclient.Transport.Native
     [Obsolete("Don't use this ITransport implementation on .NET Core 2.1 or later. Use SocketsTransport instead.")]
     public class NativeTransport : ITransport, IDisposable
     {
+        private const int DefaultBufferSize = 16 * 1024;
         private readonly NativeTransportSettings settings;
         private readonly ILog log;
         private readonly IHttpClientProvider httpClientProvider;
@@ -42,16 +43,10 @@ namespace Vostok.Clusterclient.Transport.Native
             sender = CreateSender(settings, log);
             clientProvider = new HttpClientProvider(this.settings, log);
         }
-        
-        private static TransportRequestSender CreateSender(NativeTransportSettings settings, ILog log)
-        {
-            var pool = new Pool<byte[]>(() => new byte[16384]);
 
-            var requestFactory = new HttpRequestMessageFactory(pool, log);
-            var responseReader = new ResponseReader(settings, pool, log);
-
-            return new TransportRequestSender(requestFactory, responseReader, log);
-        }
+        /// <inheritdoc />
+        public TransportCapabilities Capabilities { get; }
+            = TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
 
         /// <inheritdoc />
         public async Task<Response> SendAsync(Request request, TimeSpan? connectionTimeout, TimeSpan timeout, CancellationToken cancellationToken)
@@ -108,49 +103,19 @@ namespace Vostok.Clusterclient.Transport.Native
         }
 
         /// <inheritdoc />
-        public TransportCapabilities Capabilities { get; }
-
-        /// <inheritdoc />
         public void Dispose()
         {
             httpClientProvider?.Dispose();
         }
 
-        private HttpClientHandler CreateClientHandler()
+        private static TransportRequestSender CreateSender(NativeTransportSettings settings, ILog log)
         {
-            var handler = new HttpClientHandler
-            {
-                AllowAutoRedirect = false,
-                AutomaticDecompression = DecompressionMethods.None,
-                //CheckCertificateRevocationList = false,
-                MaxConnectionsPerServer = 10000,
-                Proxy = settings.Proxy,
-                PreAuthenticate = false,
-                UseDefaultCredentials = false,
-                UseCookies = false,
-                UseProxy = false,
-                ServerCertificateCustomValidationCallback = null
-            };
+            var pool = new Pool<byte[]>(() => new byte[DefaultBufferSize]);
 
-            // (alexkir, 13.10.2017) we can safely pass callbacks only on Windows; see https://github.com/dotnet/corefx/pull/19908
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT ||
-                Environment.OSVersion.Platform == PlatformID.Win32S ||
-                Environment.OSVersion.Platform == PlatformID.Win32Windows ||
-                Environment.OSVersion.Platform == PlatformID.WinCE)
-                // TODO(alexkir, 13.10.2017): decide if this is a good optimization practice to always ignore SSL cert validity
-                handler.ServerCertificateCustomValidationCallback = (_, __, ___, ____) => true;
+            var requestFactory = new HttpRequestMessageFactory(pool, log);
+            var responseReader = new ResponseReader(settings, pool, log);
 
-            return handler;
-        }
-        
-        private Response HandleCancellationError(Request request, TimeSpan timeout, CancellationToken cancellationToken)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                return new Response(ResponseCode.Canceled);
-
-            LogRequestTimeout(request, timeout);
-
-            return new Response(ResponseCode.RequestTimeout);
+            return new TransportRequestSender(requestFactory, responseReader, log);
         }
 
         #region Logging

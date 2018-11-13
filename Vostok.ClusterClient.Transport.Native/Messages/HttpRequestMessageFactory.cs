@@ -10,7 +10,7 @@ namespace Vostok.Clusterclient.Transport.Native.Messages
     internal class HttpRequestMessageFactory : IHttpRequestMessageFactory
     {
         private static readonly HttpMethod Patch = new HttpMethod(RequestMethods.Patch);
-        
+
         private readonly IPool<byte[]> pool;
         private readonly ILog log;
 

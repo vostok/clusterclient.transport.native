@@ -44,7 +44,7 @@ namespace Vostok.Clusterclient.Transport.Native
         private static void FillInternal(Request request, HttpRequestMessage message, ILog log)
         {
             var isUnixLike = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-            
+
             if (isUnixLike && HttpHeadersUnlocker.TryUnlockRestrictedHeaders(message.Headers, log))
                 AssignHeadersDirectly(request.Headers, message.Headers);
             else

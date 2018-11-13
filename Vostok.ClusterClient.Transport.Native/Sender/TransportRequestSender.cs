@@ -47,7 +47,7 @@ namespace Vostok.Clusterclient.Transport.Native.Sender
             }
             catch (HttpRequestException error) when (CurlExceptionHelper.IsCurlException(error.InnerException, out var code))
             {
-                LogCurlError(request, error, code); 
+                LogCurlError(request, error, code);
                 return Responses.UnknownFailure;
             }
             catch (HttpRequestException error) when (error.InnerException is Win32Exception win32Exception)
@@ -61,7 +61,7 @@ namespace Vostok.Clusterclient.Transport.Native.Sender
                 return Responses.UnknownFailure;
             }
         }
-        
+
         private async Task<Response> SendInternalAsync(IHttpClient client, RequestDisposableState state, Request request, CancellationToken cancellationToken)
         {
             state.RequestMessage = requestFactory.Create(request, cancellationToken, out var sendContext);
@@ -109,12 +109,12 @@ namespace Vostok.Clusterclient.Transport.Native.Sender
             state.PreventNextDispose();
             return new Response(responseCode, null, headers, new ResponseStream(responseReadResult.Stream, state));
         }
-        
+
         private void LogUnknownException(Request request, Exception error)
         {
             log.Warn(error, "Unknown error in sending request to {Target}.", request.Url.Authority);
         }
-        
+
         private Response HandleCancellationError(Request request, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -124,7 +124,7 @@ namespace Vostok.Clusterclient.Transport.Native.Sender
 
             return new Response(ResponseCode.RequestTimeout);
         }
-        
+
         private Response HandleWin32Error(Request request, Win32Exception error)
         {
             LogWin32Error(request, error);

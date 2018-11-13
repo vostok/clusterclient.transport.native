@@ -32,7 +32,7 @@ namespace Vostok.Clusterclient.Transport.Native
         ///     Gets or sets a value that indicates whether the transport should follow HTTP redirection responses.
         /// </summary>
         public bool AllowAutoRedirect { get; set; }
-        
+
         internal Func<int, byte[]> BufferFactory { get; set; } = i => new byte[i];
     }
 }

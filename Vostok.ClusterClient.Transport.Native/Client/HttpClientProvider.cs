@@ -9,7 +9,7 @@ namespace Vostok.Clusterclient.Transport.Native.Client
     {
         private readonly NativeTransportSettings settings;
         private readonly ILog log;
-        private ConcurrentDictionary<TimeSpan, Lazy<IHttpClient>> clients;
+        private readonly ConcurrentDictionary<TimeSpan, Lazy<IHttpClient>> clients;
 
         public HttpClientProvider(NativeTransportSettings settings, ILog log)
         {
@@ -24,12 +24,6 @@ namespace Vostok.Clusterclient.Transport.Native.Client
                     connectionTimeout ?? Timeout.InfiniteTimeSpan,
                     t => new Lazy<IHttpClient>(() => CreateClient(t)))
                 .Value;
-        
-
-        private IHttpClient CreateClient(TimeSpan? connectionTimeout)
-        {
-            return new SystemNetHttpClient(HttpClientHandlerFactory.Build(settings, connectionTimeout, log), true);
-        }
 
         public void Dispose()
         {
@@ -40,6 +34,11 @@ namespace Vostok.Clusterclient.Transport.Native.Client
                 client.CancelPendingRequests();
                 client.Dispose();
             }
+        }
+
+        private IHttpClient CreateClient(TimeSpan? connectionTimeout)
+        {
+            return new SystemNetHttpClient(HttpClientHandlerFactory.Build(settings, connectionTimeout, log), true);
         }
     }
 }
