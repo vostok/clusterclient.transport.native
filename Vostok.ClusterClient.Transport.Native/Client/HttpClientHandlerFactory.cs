@@ -24,7 +24,7 @@ namespace Vostok.Clusterclient.Transport.Native.Client
             client.PreAuthenticate = false;
             client.UseDefaultCredentials = false;
             client.UseCookies = false;
-            client.UseProxy = false;
+            client.UseProxy = settings.Proxy != null;
             client.ServerCertificateCustomValidationCallback = null;
 
             // (alexkir, 13.10.2017) we can safely pass callbacks only on Windows; see https://github.com/dotnet/corefx/pull/19908
