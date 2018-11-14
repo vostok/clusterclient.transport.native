@@ -36,7 +36,7 @@ namespace Vostok.Clusterclient.Transport.Native.Contents
             Console.WriteLine("RequestStreamWrapper");
             try
             {
-                count = (int) Math.Min(count, bytesToSent - position);
+                count = (int)Math.Min(count, bytesToSent - position);
                 var bytesRead = await stream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
 
                 position += bytesRead;

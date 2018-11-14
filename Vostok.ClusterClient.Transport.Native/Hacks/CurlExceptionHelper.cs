@@ -9,7 +9,7 @@ namespace Vostok.Clusterclient.Transport.Native.Hacks
 
         public static bool IsCurlException(Exception e, out CurlCode code)
         {
-            code = (CurlCode) (e?.HResult ?? 0);
+            code = (CurlCode)(e?.HResult ?? 0);
             return e != null && e.GetType() == CurlException;
         }
 

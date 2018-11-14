@@ -91,7 +91,7 @@ namespace Vostok.Clusterclient.Transport.Native.Sender
             if (sendContext.Response != null)
                 return sendContext.Response;
 
-            var responseCode = (ResponseCode) (int) state.ResponseMessage.StatusCode;
+            var responseCode = (ResponseCode)(int)state.ResponseMessage.StatusCode;
 
             var headers = HeadersConverter.Create(state.ResponseMessage);
 

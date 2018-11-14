@@ -30,7 +30,7 @@ namespace Vostok.Clusterclient.Transport.Native
                 if (handle == null)
                     return;
 
-                if (!WinHttpSetTimeouts(handle, 0, (int) (connectTimeout?.TotalMilliseconds ?? 0), 0, 0))
+                if (!WinHttpSetTimeouts(handle, 0, (int)(connectTimeout?.TotalMilliseconds ?? 0), 0, 0))
                     throw new Win32Exception();
             }
             catch (Exception error)

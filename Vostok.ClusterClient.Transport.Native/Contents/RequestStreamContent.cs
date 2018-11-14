@@ -41,7 +41,7 @@ namespace Vostok.Clusterclient.Transport.Native.Contents
             {
                 while (bytesSent < bytesToSend)
                 {
-                    var bytesToRead = (int) Math.Min(buffer.Length, bytesToSend - bytesSent);
+                    var bytesToRead = (int)Math.Min(buffer.Length, bytesToSend - bytesSent);
 
                     int bytesRead;
 

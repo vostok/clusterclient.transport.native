@@ -4,7 +4,6 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
-using Vostok.Clusterclient.Transport.Native.Pool;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Native.Contents

@@ -4,7 +4,7 @@ using System.Net;
 namespace Vostok.Clusterclient.Transport.Native
 {
     /// <summary>
-    /// A class that represents <see cref="NativeTransport"/> settings..
+    /// A class that represents <see cref="NativeTransport"/> settings.
     /// </summary>
     public class NativeTransportSettings
     {
@@ -19,7 +19,7 @@ namespace Vostok.Clusterclient.Transport.Native
         public long? MaxResponseBodySize { get; set; }
 
         /// <summary>
-        ///     Gets or sets the delegate that decide use response streaming or not.
+        ///     Gets or sets the delegate that decides use response streaming or not.
         /// </summary>
         public Predicate<long?> UseResponseStreaming { get; set; } = _ => false;
 

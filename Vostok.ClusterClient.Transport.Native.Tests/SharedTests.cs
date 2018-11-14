@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using NSubstitute.Core;
 using NUnit.Framework;
 using Vostok.Clusterclient.Transport.Tests.Shared.Functional;
 using Vostok.Logging.Abstractions;

@@ -41,7 +41,7 @@ namespace Vostok.Clusterclient.Transport.Native.ResponseReading
                     if (contentLength > settings.MaxResponseBodySize)
                         return new ResponseReadResult(ResponseCode.InsufficientStorage);
 
-                    return await GetResponseWithKnownContentLength(responseMessage, (int) contentLength, cancellationToken).ConfigureAwait(false);
+                    return await GetResponseWithKnownContentLength(responseMessage, (int)contentLength, cancellationToken).ConfigureAwait(false);
                 }
 
                 return await GetResponseWithUnknownContentLength(responseMessage, cancellationToken).ConfigureAwait(false);
@@ -74,7 +74,7 @@ namespace Vostok.Clusterclient.Transport.Native.ResponseReading
                         return new ResponseReadResult(ResponseCode.InsufficientStorage);
                 }
 
-                var content = new Content(memoryStream.GetBuffer(), 0, (int) memoryStream.Length);
+                var content = new Content(memoryStream.GetBuffer(), 0, (int)memoryStream.Length);
                 return new ResponseReadResult(content);
             }
         }

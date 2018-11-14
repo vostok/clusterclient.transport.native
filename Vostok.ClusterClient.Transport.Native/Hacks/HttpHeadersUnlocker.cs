@@ -38,8 +38,8 @@ namespace Vostok.Clusterclient.Transport.Native.Hacks
         {
             try
             {
-                var allowLambda = CreateAssignment<HttpHeaders>("_allowedHeaderTypes", BindingFlags.Instance | BindingFlags.NonPublic, (int) HttpHeaderType.Custom);
-                var treatLambda = CreateAssignment<HttpHeaders>("_treatAsCustomHeaderTypes", BindingFlags.Instance | BindingFlags.NonPublic, (int) HttpHeaderType.All);
+                var allowLambda = CreateAssignment<HttpHeaders>("_allowedHeaderTypes", BindingFlags.Instance | BindingFlags.NonPublic, (int)HttpHeaderType.Custom);
+                var treatLambda = CreateAssignment<HttpHeaders>("_treatAsCustomHeaderTypes", BindingFlags.Instance | BindingFlags.NonPublic, (int)HttpHeaderType.All);
 
                 return h =>
                 {
@@ -69,7 +69,7 @@ namespace Vostok.Clusterclient.Transport.Native.Hacks
             il.Emit(OpCodes.Stfld, fieldInfo);
             il.Emit(OpCodes.Ret);
 
-            return (Action<TType>) dyn.CreateDelegate(typeof(Action<TType>));
+            return (Action<TType>)dyn.CreateDelegate(typeof(Action<TType>));
         }
 
         private static bool TryUnlockRestrictedHeadersInternal(HttpHeaders headers, ILog log)
