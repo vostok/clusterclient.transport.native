@@ -83,13 +83,6 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
     }
     internal class ProxyTests : ProxyTests<Config>
     {
-        public override void Should_send_request_to_proxy_if_setting_is_true()
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                Assert.Pass("Ignore test on Linux");
-            
-            base.Should_send_request_to_proxy_if_setting_is_true();
-        }
     }
     internal class QuerySendingTests : QuerySendingTests<Config>
     {
