@@ -14,10 +14,13 @@ notests *default:
     - vostok.devtools
     - vostok.clusterclient.core
     - vostok.logging.abstractions
+    - vostok.clusterclient.transport.systemnethttp/src
 
 full-build > notests:
   deps:
     - vostok.logging.console
+    - vostok.commons.testing/src
+    - vostok.commons.threading/src
     - vostok.clusterclient.transport.tests
 
   build:
