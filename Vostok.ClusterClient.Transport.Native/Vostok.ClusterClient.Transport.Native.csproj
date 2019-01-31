@@ -1,31 +1,38 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
+
   <Import Project="..\..\vostok.devtools\library-common-props\Main-Project.props" />
   <Import Project="..\..\vostok.devtools\git-commit-to-assembly-title\Vostok.Tools.GitCommit2AssemblyTitle.props" />
+
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <Configurations>Debug;Release</Configurations>
     <LangVersion>7.2</LangVersion>
     <RootNamespace>Vostok.Clusterclient.Transport.Native</RootNamespace>
   </PropertyGroup>
+
   <PropertyGroup>
     <VersionPrefix>0.0.1</VersionPrefix>
   </PropertyGroup>
+
   <PropertyGroup>
     <Title>Vostok.ClusterClient.Transport.Native</Title>
-    <Description>Vostok.ClusterClient.Transport.Native</Description>
+    <Description>This library contains a transport implementation built upon native WinHttpHandler/CurlHandler and targeting .NET Core 2.0.</Description>
   </PropertyGroup>
+
   <PropertyGroup>
     <PackageProjectUrl>https://github.com/vostok/clusterclient.transport.native</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/vostok/clusterclient.transport.native/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageTags>vostok</PackageTags>
+    <PackageTags>vostok vostok.clusterclient</PackageTags>
     <RepositoryUrl>https://github.com/vostok/clusterclient.transport.native</RepositoryUrl>
   </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="Vostok.ClusterClient.Core">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\vostok.clusterclient.core\Vostok.ClusterClient.Core\bin\Release\netstandard2.0\Vostok.ClusterClient.Core.dll</HintPath>
     </Reference>
+
     <Reference Include="Vostok.Logging.Abstractions">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\vostok.logging.abstractions\Vostok.Logging.Abstractions\bin\Release\netstandard2.0\Vostok.Logging.Abstractions.dll</HintPath>
@@ -33,9 +40,9 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Compile Include="..\..\vostok.commons.collections\Vostok.Commons.Collections\UnboundedObjectPool.cs" Link="Commons\UnboundedObjectPool.cs" />
-    <Compile Include="..\..\vostok.commons.time\Vostok.Commons.Time\TimeSpanFormatting.cs" Link="Commons\TimeSpanFormatting.cs" />
-    <Compile Include="..\..\vostok.commons.environment\Vostok.Commons.Environment\RuntimeDetector.cs" Link="Commons\RuntimeDetector.cs" />
+    <Compile Include="..\..\vostok.commons.collections\Vostok.Commons.Collections\RecyclingBoundedCache.cs" Link="Commons\RecyclingBoundedCache.cs" />
   </ItemGroup>
+
+  <Import Project="..\..\vostok.clusterclient.transport.systemnethttp\Vostok.ClusterClient.Transport.SystemNetHttp.props" />
 
 </Project>

@@ -1,15 +1,14 @@
 using System;
-using System.ComponentModel;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Core.Transport;
-using Vostok.Clusterclient.Transport.Native.Client;
-using Vostok.Clusterclient.Transport.Native.Messages;
-using Vostok.Clusterclient.Transport.Native.Pool;
-using Vostok.Clusterclient.Transport.Native.ResponseReading;
-using Vostok.Clusterclient.Transport.Native.Sender;
-using Vostok.Commons.Time;
+using Vostok.Clusterclient.Transport.SystemNetHttp.BodyReading;
+using Vostok.Clusterclient.Transport.SystemNetHttp.Header;
+using Vostok.Clusterclient.Transport.SystemNetHttp.Helpers;
+using Vostok.Clusterclient.Transport.SystemNetHttp.Messages;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Native
@@ -17,129 +16,82 @@ namespace Vostok.Clusterclient.Transport.Native
     /// <summary>
     /// <para>A legacy ClusterClient transport for .NET Core 2.0. Internally uses <c>WinHttpHandler</c> on Windows and <c>CurlHandler</c> on Unix-like OS.</para>
     /// </summary>
+    [PublicAPI]
     [Obsolete("Don't use this ITransport implementation on .NET Core 2.1 or later. Use SocketsTransport instead.")]
-    public class NativeTransport : ITransport, IDisposable
+    public class NativeTransport : ITransport
     {
-        private const int DefaultBufferSize = 16 * 1024;
+        private static readonly NativeTransportSettings DefaultSettings = new NativeTransportSettings();
+
         private readonly NativeTransportSettings settings;
         private readonly ILog log;
-        private readonly IHttpClientProvider httpClientProvider;
-        private readonly ResponseReader reader;
-        private readonly TransportRequestSender sender;
+
         private readonly HttpClientProvider clientProvider;
+        private readonly TimeoutProvider timeoutProvider;
+        private readonly ErrorHandler errorHandler;
+        private readonly BodyReader bodyReader;
 
         /// <inheritdoc cref="NativeTransport" />
-        public NativeTransport(NativeTransportSettings settings, ILog log)
+        public NativeTransport([NotNull] ILog log)
+            : this(DefaultSettings, log)
         {
-            this.settings = settings;
-            this.log = log ?? throw new ArgumentNullException(nameof(log));
+        }
 
-            httpClientProvider = new HttpClientProvider(settings, log);
-            reader = new ResponseReader(settings, new Pool<byte[]>(() => new byte[16384]), log);
-            this.log = log;
+        /// <inheritdoc cref="NativeTransport" />
+        public NativeTransport([NotNull] NativeTransportSettings settings, [NotNull] ILog log)
+        {
+            this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            this.log = (log ?? throw new ArgumentNullException(nameof(log))).ForContext<NativeTransport>();
 
-            sender = CreateSender(settings, log);
-            clientProvider = new HttpClientProvider(this.settings, log);
+            clientProvider = new HttpClientProvider(settings, this.log);
+            timeoutProvider = new TimeoutProvider(settings.RequestAbortTimeout, this.log);
+            errorHandler = new ErrorHandler(this.log);
+            bodyReader = new BodyReader(
+                settings.BufferFactory,
+                len => settings.UseResponseStreaming(len),
+                () => settings.MaxResponseBodySize,
+                this.log);
         }
 
         /// <inheritdoc />
-        public TransportCapabilities Capabilities { get; }
-            = TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
+        public TransportCapabilities Capabilities
+            => TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
 
         /// <inheritdoc />
-        public async Task<Response> SendAsync(Request request, TimeSpan? connectionTimeout, TimeSpan timeout, CancellationToken cancellationToken)
+        public Task<Response> SendAsync(Request request, TimeSpan? connectionTimeout, TimeSpan timeout, CancellationToken token)
+            => timeoutProvider.SendWithTimeoutAsync((r, t) => SendAsync(r, connectionTimeout, t), request, timeout, token);
+
+        private async Task<Response> SendAsync(Request request, TimeSpan? connectionTimeout, CancellationToken token)
         {
-            if (cancellationToken.IsCancellationRequested)
-                return Responses.Canceled;
-
-            if (timeout.TotalMilliseconds < 1)
+            try
             {
-                LogRequestTimeout(request, timeout);
-                return Responses.Timeout;
+                using (var state = new DisposableState())
+                {
+                    state.Request = RequestMessageFactory.Create(request, token, log);
+
+                    var client = clientProvider.Obtain(connectionTimeout);
+
+                    state.Response = await client.SendAsync(state.Request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
+
+                    var responseCode = (ResponseCode)(int)state.Response.StatusCode;
+                    var responseHeaders = ResponseHeadersConverter.Convert(state.Response);
+
+                    var bodyReadResult = await bodyReader.ReadAsync(state.Response, token).ConfigureAwait(false);
+                    if (bodyReadResult.Stream == null)
+                        return new Response(bodyReadResult.ErrorCode ?? responseCode, bodyReadResult.Content, responseHeaders);
+
+                    state.PreventNextDispose();
+
+                    return new Response(responseCode, null, responseHeaders, new DisposableBodyStream(bodyReadResult.Stream, state));
+                }
             }
-
-            using (var timeoutCancellation = new CancellationTokenSource())
-            using (var requestCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+            catch (Exception error)
             {
-                var client = clientProvider.GetClient(connectionTimeout);
-                var timeoutTask = Task.Delay(timeout, timeoutCancellation.Token);
-                var senderTask = sender.SendAsync(client, request, requestCancellation.Token);
-                var completedTask = await Task.WhenAny(timeoutTask, senderTask).ConfigureAwait(false);
-                if (completedTask is Task<Response> taskWithResponse)
-                {
-                    timeoutCancellation.Cancel();
-                    return taskWithResponse.GetAwaiter().GetResult();
-                }
+                var errorResponse = errorHandler.TryHandle(request, error, token);
+                if (errorResponse == null)
+                    throw;
 
-                // completedTask is timeout Task
-                requestCancellation.Cancel();
-                LogRequestTimeout(request, timeout);
-
-                // wait for cancellation & dispose resources associated with Response object
-                // ReSharper disable once MethodSupportsCancellation
-                var senderTaskContinuation = senderTask.ContinueWith(
-                    t =>
-                    {
-                        if (t.IsCompleted)
-                            t.GetAwaiter().GetResult().Dispose();
-                    });
-
-                using (var abortCancellation = new CancellationTokenSource())
-                {
-                    var abortWaitingDelay = Task.Delay(settings.RequestAbortTimeout, abortCancellation.Token);
-
-                    await Task.WhenAny(senderTaskContinuation, abortWaitingDelay).ConfigureAwait(false);
-
-                    abortCancellation.Cancel();
-                }
-
-                if (!senderTask.IsCompleted)
-                    LogFailedToWaitForRequestAbort();
-
-                return Responses.Timeout;
+                return errorResponse;
             }
         }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            httpClientProvider?.Dispose();
-        }
-
-        private static TransportRequestSender CreateSender(NativeTransportSettings settings, ILog log)
-        {
-            var pool = new Pool<byte[]>(() => new byte[DefaultBufferSize]);
-
-            var requestFactory = new HttpRequestMessageFactory(pool, log);
-            var responseReader = new ResponseReader(settings, pool, log);
-
-            return new TransportRequestSender(requestFactory, responseReader, log);
-        }
-
-        #region Logging
-
-        private void LogRequestTimeout(Request request, TimeSpan timeout)
-        {
-            log.Error("Request timed out. Target = {Target}. Timeout = {Timeout:0.000} sec.", request.Url.Authority, timeout.TotalSeconds);
-        }
-
-        private void LogUnknownException(Request request, Exception error)
-        {
-            log.Error(error, "Unknown error in sending request to {Target}. ", request.Url.Authority);
-        }
-
-        private void LogWin32Error(Request request, Win32Exception error)
-        {
-            log.Error(error, "WinAPI error with code {ErrorCode} while sending request to {Target}.", error.NativeErrorCode, request.Url.Authority);
-        }
-
-        private void LogFailedToWaitForRequestAbort()
-        {
-            log.Warn(
-                "Timed out request was aborted but did not complete in {RequestAbortTimeout}.",
-                settings.RequestAbortTimeout.ToPrettyString());
-        }
-
-        #endregion
     }
 }

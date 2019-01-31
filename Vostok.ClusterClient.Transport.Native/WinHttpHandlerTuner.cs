@@ -36,7 +36,7 @@ namespace Vostok.Clusterclient.Transport.Native
             catch (Exception error)
             {
                 canTune = false;
-                log.Error(error, "Failed to tune WinHttpHandler.");
+                log.Warn(error, "Failed to tune WinHttpHandler.");
             }
         }
 

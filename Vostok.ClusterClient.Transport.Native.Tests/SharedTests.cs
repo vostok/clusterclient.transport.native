@@ -17,10 +17,11 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
             var transportSettings = new NativeTransportSettings
             {
                 Proxy = settings.Proxy,
-                BufferFactory = settings.BufferFactory,
                 MaxResponseBodySize = settings.MaxResponseBodySize,
+                MaxConnectionsPerEndpoint = settings.MaxConnectionsPerEndpoint,
                 UseResponseStreaming = settings.UseResponseStreaming,
-                AllowAutoRedirect = settings.AllowAutoRedirect
+                AllowAutoRedirect = settings.AllowAutoRedirect,
+                BufferFactory = settings.BufferFactory
             };
             
             return new NativeTransport(transportSettings, log);
@@ -34,16 +35,18 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
         };
     }
     
-    [TestFixture]
     internal class AllowAutoRedirectTests : AllowAutoRedirectTests<Config>
     {
     }
+
     internal class ClientTimeoutTests : ClientTimeoutTests<Config>
     {
     }
+
     internal class ConnectionFailureTests : ConnectionFailureTests<Config>
     {
     }
+
     internal class ConnectionTimeoutTests : ConnectionTimeoutTests<Config>
     {
         public override void Should_timeout_on_connection_to_a_blackhole_by_connect_timeout()
@@ -54,12 +57,15 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
                 base.Should_timeout_on_connection_to_a_blackhole_by_connect_timeout();
         }
     }
+
     internal class ContentReceivingTests : ContentReceivingTests<Config>
     {
     }
+
     internal class ContentSendingTests : ContentSendingTests<Config>
     {
     }
+
     internal class HeaderReceivingTests : HeaderReceivingTests<Config>
     {
     }
@@ -78,21 +84,27 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
     internal class MaxConnectionsPerEndpointTests : MaxConnectionsPerEndpointTests<Config>
     {
     }
+
     internal class MethodSendingTests : MethodSendingTests<Config>
     {
     }
+
     internal class ProxyTests : ProxyTests<Config>
     {
     }
+
     internal class QuerySendingTests : QuerySendingTests<Config>
     {
     }
+
     internal class RequestCancellationTests : RequestCancellationTests<Config>
     {
     }
+
     internal class StatusCodeReceivingTests : StatusCodeReceivingTests<Config>
     {
     }
+
     internal class ContentStreamingTests : ContentStreamingTests<Config>
     {
     }
