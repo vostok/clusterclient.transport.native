@@ -7,6 +7,8 @@ notests *default:
 
   install:
     - Vostok.ClusterClient.Transport.Native/bin/Release/netcoreapp2.0/Vostok.ClusterClient.Transport.Native.dll
+    - module vostok.clusterclient.core
+    - module vostok.logging.abstractions
 
   deps:
     - vostok.logging.console
@@ -17,6 +19,7 @@ notests *default:
 full-build > notests:
   deps:
     - vostok.clusterclient.transport.tests
+  
   build:
     target: Vostok.ClusterClient.Transport.Native.sln
     configuration: Release
