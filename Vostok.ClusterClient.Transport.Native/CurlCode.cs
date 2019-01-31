@@ -1,10 +1,7 @@
-using JetBrains.Annotations;
-
 // ReSharper disable InconsistentNaming
 
-namespace Vostok.Clusterclient.Transport.Native.Hacks
+namespace Vostok.Clusterclient.Transport.Native
 {
-    [PublicAPI]
     internal enum CurlCode
     {
         CURLE_OK = 0,
