@@ -40,7 +40,7 @@ namespace Vostok.Clusterclient.Transport.Native
         public NativeTransport([NotNull] NativeTransportSettings settings, [NotNull] ILog log)
         {
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            this.log = (log ?? throw new ArgumentNullException(nameof(log))).ForContext<NativeTransport>();
+            this.log = log ?? throw new ArgumentNullException(nameof(log));
 
             clientProvider = new HttpClientProvider(settings, this.log);
             timeoutProvider = new TimeoutProvider(settings.RequestAbortTimeout, this.log);
