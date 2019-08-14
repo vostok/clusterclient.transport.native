@@ -1,3 +1,7 @@
+## 0.1.3 (14-08-2019):
+
+Fixed a bug where a network error while reading content could cause the transport to return a response with headers or partial body.
+
 ## 0.1.2 (20-03-2019): 
 
 NativeTransportSettings: BufferFactory option is now public.
