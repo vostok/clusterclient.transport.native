@@ -108,4 +108,8 @@ namespace Vostok.Clusterclient.Transport.Native.Tests
     internal class ContentStreamingTests : ContentStreamingTests<Config>
     {
     }
+
+    internal class NetworkErrorsHandlingTests : NetworkErrorsHandlingTests<Config>
+    {
+    }
 }

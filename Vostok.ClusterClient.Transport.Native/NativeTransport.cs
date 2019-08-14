@@ -78,8 +78,12 @@ namespace Vostok.Clusterclient.Transport.Native
                     var responseHeaders = ResponseHeadersConverter.Convert(state.Response);
 
                     var bodyReadResult = await bodyReader.ReadAsync(state.Response, token).ConfigureAwait(false);
+
+                    if (bodyReadResult.ErrorCode.HasValue)
+                        return new Response(bodyReadResult.ErrorCode.Value);
+
                     if (bodyReadResult.Stream == null)
-                        return new Response(bodyReadResult.ErrorCode ?? responseCode, bodyReadResult.Content, responseHeaders);
+                        return new Response(responseCode, bodyReadResult.Content, responseHeaders);
 
                     state.PreventNextDispose();
 
