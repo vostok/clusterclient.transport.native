@@ -77,6 +77,9 @@ namespace Vostok.Clusterclient.Transport.Native
                     var responseCode = (ResponseCode)(int)state.Response.StatusCode;
                     var responseHeaders = ResponseHeadersConverter.Convert(state.Response);
 
+                    if (request.Method == RequestMethods.Head)
+                        return new Response(responseCode, headers: responseHeaders);
+
                     var bodyReadResult = await bodyReader.ReadAsync(state.Response, token).ConfigureAwait(false);
 
                     if (bodyReadResult.ErrorCode.HasValue)
