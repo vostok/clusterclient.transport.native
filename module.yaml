@@ -11,10 +11,12 @@ notests *default:
     - module vostok.logging.abstractions
 
   deps:
-    - vostok.devtools
     - vostok.clusterclient.core
-    - vostok.logging.abstractions
     - vostok.clusterclient.transport.systemnethttp/src
+    - vostok.commons.collections/src
+    - vostok.commons.time/src
+    - vostok.devtools
+    - vostok.logging.abstractions
 
 full-build > notests:
   deps:

@@ -42,6 +42,7 @@
   
   <ItemGroup>
     <Compile Include="..\..\vostok.commons.collections\Vostok.Commons.Collections\RecyclingBoundedCache.cs" Link="Commons\RecyclingBoundedCache.cs" />
+    <Compile Include="..\..\vostok.commons.time\Vostok.Commons.Time\TimeSpanFormatting.cs" Link="Commons\TimeSpanFormatting.cs" />
   </ItemGroup>
 
   <Import Project="..\..\vostok.clusterclient.transport.systemnethttp\Vostok.ClusterClient.Transport.SystemNetHttp.props" />
